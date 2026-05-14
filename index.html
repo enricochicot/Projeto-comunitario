@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OleoMap — Descarte Correto</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-brand">
+      <span class="brand-icon">♻</span>
+      <span class="brand-name">OleoMap</span>
+    </div>
+    <div class="header-location">
+      <span class="location-dot"></span>
+      <span id="city-label">Detectando cidade...</span>
+    </div>
+  </header>
+
+  <div class="app-layout">
+
+    <!-- Mapa -->
+    <div id="map">
+      <button class="recenter-btn" id="recenter-btn" title="Centralizar em minha posição">📍</button>
+    </div>
+
+    <!-- Painel lateral / bottom sheet -->
+    <aside class="points-panel" id="points-panel">
+      <div class="panel-handle" id="panel-handle"></div>
+
+      <div class="panel-header">
+        <p class="panel-subtitle">Pontos de coleta próximos</p>
+        <div class="filter-chips" id="filter-chips">
+          <button class="chip active" data-filter="todos">Todos</button>
+          <button class="chip" data-filter="ecoponto">Ecoponto</button>
+          <button class="chip" data-filter="supermercado">Supermercado</button>
+          <button class="chip" data-filter="ong">ONG</button>
+          <button class="chip" data-filter="escola">Escola</button>
+        </div>
+      </div>
+
+      <div class="points-list" id="points-list">
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Buscando pontos na sua região...</p>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <p>Dados mockados · <a href="#" id="add-point-link">Sugerir novo ponto</a></p>
+      </div>
+    </aside>
+
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="init.js"></script>
+  <script src="points.js"></script>
+  <script src="map.js"></script>
+  <script src="track.js"></script>
+  <script src="ui.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
