@@ -4,11 +4,9 @@
 //
 // FLUXO:
 //   GPS coords  →  Nominatim  →  nome da cidade  →  filtra pontos
-//
-// ANALOGIA FLUTTER: é como um LocationService que emite um Stream<Position>.
-// Quem escuta (ui.js) reage quando a posição chega — sem saber como foi obtida.
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/reverse';
+const GEOCODE_TIMEOUT_MS = 8000;
 
 /**
  * Faz reverse geocoding: lat/lng → nome da cidade.
@@ -16,13 +14,20 @@ const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/reverse';
  */
 async function reverseGeocode(lat, lng) {
   try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), GEOCODE_TIMEOUT_MS);
+
     const url = `${NOMINATIM_URL}?format=json&lat=${lat}&lon=${lng}&accept-language=pt-BR`;
-    const res  = await fetch(url, {
-      headers: { 'User-Agent': 'OleoMap/1.0 (descarte-oleo-app)' }
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'OleoMap/1.0 (descarte-oleo-app)' },
+      signal: controller.signal,
     });
+    clearTimeout(timer);
+
+    if (!res.ok) return null;
+
     const data = await res.json();
     const addr = data.address || {};
-    // Nominatim pode retornar city, town, village ou municipality
     return addr.city || addr.town || addr.village || addr.municipality || null;
   } catch {
     return null;
@@ -44,9 +49,10 @@ function trackLocation({ onLocationReady, onPositionUpdate, onError }) {
 
   navigator.geolocation.watchPosition(
     async position => {
-      const { latitude: lat, longitude: lng } = position.coords;
+      const { latitude: lat, longitude: lng, accuracy } = position.coords;
       userPosition = { lat, lng };
-      updateUserMarker(lat, lng);
+      updateUserMarker(lat, lng, accuracy);
+      _updateAccuracyBadge(accuracy);
 
       if (!cityResolved) {
         cityResolved = true; // evita múltiplas chamadas ao Nominatim
@@ -62,6 +68,15 @@ function trackLocation({ onLocationReady, onPositionUpdate, onError }) {
         : 'Não foi possível obter sua localização.';
       onError?.(msg);
     },
-    { enableHighAccuracy: true, maximumAge: 10_000 }
+    { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 }
   );
+}
+
+function _updateAccuracyBadge(meters) {
+  const el = document.getElementById('accuracy-badge');
+  if (!el) return;
+  if (meters <= 20)       { el.textContent = `±${Math.round(meters)} m`; el.className = 'accuracy-badge good'; }
+  else if (meters <= 100) { el.textContent = `±${Math.round(meters)} m`; el.className = 'accuracy-badge ok'; }
+  else                    { el.textContent = `±${meters >= 1000 ? (meters/1000).toFixed(1)+'km' : Math.round(meters)+'m'} (impreciso)`; el.className = 'accuracy-badge bad'; }
+  el.hidden = false;
 }

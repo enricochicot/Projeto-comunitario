@@ -1,23 +1,44 @@
 // ── init.js ──────────────────────────────────────────────────────────────────
-// Variáveis globais e utilitários compartilhados entre todos os módulos.
-// Pense neste arquivo como o "estado global" da aplicação — em Flutter seria
-// equivalente a um InheritedWidget ou provider raiz que todos os widgets leem.
+// Store global: estado compartilhado e referências DOM.
+// Padrão: objeto único (namespace) para evitar poluição do escopo global.
 
-let map = null;           // instância do Leaflet
-let userMarker = null;    // marcador do usuário no mapa
-let userPosition = null;  // { lat, lng } mais recente do usuário
-let currentCity = null;   // nome da cidade detectada
+const Store = {
+  map:          null,   // instância Leaflet
+  userMarker:   null,   // circleMarker do usuário
+  userPosition: null,   // { lat, lng }
+  currentCity:  null,   // string | null
+  activeFilter: 'todos',
+};
+
+// Referências DOM — resolvidas uma única vez
+const Dom = {
+  cityLabel:  document.getElementById('city-label'),
+  pointsList: document.getElementById('points-list'),
+};
+
+// Atalhos mantidos para compatibilidade com módulos existentes
+// (map.js, track.js, ui.js leem essas vars diretamente por enquanto)
+let map          = null;
+let userMarker   = null;
+let userPosition = null;
+let currentCity  = null;
 let activeFilter = 'todos';
 
-// Referências DOM — acessadas por vários módulos
-const cityLabel   = document.getElementById('city-label');
-const pointsList  = document.getElementById('points-list');
+// Mantém Store e vars planas em sincronia
+function _syncStore() {
+  map          = Store.map;
+  userMarker   = Store.userMarker;
+  userPosition = Store.userPosition;
+  currentCity  = Store.currentCity;
+  activeFilter = Store.activeFilter;
+}
 
 function setCityLabel(city) {
-  currentCity = city;
-  if (cityLabel) cityLabel.textContent = city;
+  Store.currentCity = city;
+  currentCity       = city;
+  if (Dom.cityLabel) Dom.cityLabel.textContent = city;
 }
 
-function showError(msg) {
-  console.error('[OleoMap]', msg);
-}
+// Referências legadas usadas por ui.js
+const cityLabel  = Dom.cityLabel;
+const pointsList = Dom.pointsList;

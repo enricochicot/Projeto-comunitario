@@ -3,7 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OleoMap — Descarte Correto</title>
+  <meta name="description" content="OleoMap Coperlagos — Encontre pontos de coleta de óleo de cozinha usado em São José do Rio Preto. Uma iniciativa da Coperlagos para o descarte correto." />
+  <meta name="theme-color" content="#1a3a2a" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="OleoMap Coperlagos — Descarte Correto de Óleo" />
+  <meta property="og:description" content="Iniciativa Coperlagos: encontre os pontos de coleta de óleo de cozinha usado mais próximos de você em São José do Rio Preto." />
+  <meta property="og:type" content="website" />
+
+  <title>OleoMap — Coperlagos · São José do Rio Preto</title>
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♻</text></svg>" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,13 +25,48 @@
   <header class="app-header">
     <div class="header-brand">
       <span class="brand-icon">♻</span>
-      <span class="brand-name">OleoMap</span>
+      <div class="brand-text">
+        <span class="brand-name">OleoMap</span>
+        <span class="brand-partner">por Coperlagos</span>
+      </div>
     </div>
-    <div class="header-location">
-      <span class="location-dot"></span>
-      <span id="city-label">Detectando cidade...</span>
+    <div class="header-right">
+      <div class="header-location">
+        <span class="location-dot"></span>
+        <span id="city-label">Detectando cidade...</span>
+        <span class="accuracy-badge" id="accuracy-badge" hidden></span>
+      </div>
+      <button class="set-location-btn" id="set-location-btn" title="Definir localização manualmente" aria-label="Definir localização manualmente">
+        ✏️
+      </button>
     </div>
   </header>
+
+  <!-- Modal: Definir localização manual ──────────────────────────────── -->
+  <div class="modal-overlay" id="modal-location" role="dialog" aria-modal="true" aria-labelledby="modal-location-title" hidden>
+    <div class="modal modal--sm" role="document">
+      <button class="modal-close" id="modal-location-close" aria-label="Fechar">×</button>
+      <h2 class="modal-title" id="modal-location-title">📍 Definir minha localização</h2>
+      <p class="modal-desc">Digite um endereço, bairro ou cidade para ver os pontos mais próximos.</p>
+      <form id="location-form" novalidate autocomplete="off">
+        <div class="form-field location-field-wrapper">
+          <label for="location-input">Endereço ou cidade</label>
+          <div class="location-input-row">
+            <input
+              id="location-input"
+              type="text"
+              placeholder="Endereço, cidade ou CEP (ex: 15014-110)"
+              autocomplete="off"
+              required
+            />
+            <button type="submit" class="btn-primary" id="location-search-btn">Buscar</button>
+          </div>
+          <p class="location-error" id="location-error" hidden></p>
+        </div>
+      </form>
+      <div id="location-results" class="location-results" hidden></div>
+    </div>
+  </div>
 
   <div class="app-layout">
 
@@ -35,8 +80,22 @@
       <div class="panel-handle" id="panel-handle"></div>
 
       <div class="panel-header">
-        <p class="panel-subtitle">Pontos de coleta próximos</p>
-        <div class="filter-chips" id="filter-chips">
+        <div class="panel-title-row">
+          <p class="panel-subtitle">Pontos de coleta próximos</p>
+          <span class="points-count" id="points-count" hidden></span>
+        </div>
+        <div class="search-wrapper">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input
+            class="search-input"
+            id="search-input"
+            type="search"
+            placeholder="Buscar por nome ou endereço…"
+            aria-label="Buscar pontos de coleta"
+            autocomplete="off"
+          />
+        </div>
+        <div class="filter-chips" id="filter-chips" role="group" aria-label="Filtrar por tipo">
           <button class="chip active" data-filter="todos">Todos</button>
           <button class="chip" data-filter="ecoponto">Ecoponto</button>
           <button class="chip" data-filter="supermercado">Supermercado</button>
@@ -53,10 +112,60 @@
       </div>
 
       <div class="panel-footer">
-        <p>Dados mockados · <a href="#" id="add-point-link">Sugerir novo ponto</a></p>
+        <div class="footer-partner">
+          <span class="footer-partner-label">Uma iniciativa</span>
+          <strong class="footer-partner-name">Coperlagos</strong>
+          <span class="footer-partner-city">São José do Rio Preto · SP</span>
+        </div>
+        <p class="footer-links"><a href="#" id="add-point-link">Sugerir novo ponto</a></p>
       </div>
     </aside>
 
+  </div>
+
+  <!-- Modal: Sugerir novo ponto ──────────────────────────────────────── -->
+  <div class="modal-overlay" id="modal-suggest" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+    <div class="modal" role="document">
+      <button class="modal-close" id="modal-close" aria-label="Fechar">×</button>
+      <h2 class="modal-title" id="modal-title">♻ Sugerir novo ponto</h2>
+      <p class="modal-desc">Conhece um local que aceita óleo usado? Compartilhe com a comunidade!</p>
+
+      <form id="suggest-form" novalidate>
+        <div class="form-field">
+          <label for="f-name">Nome do local <span aria-hidden="true">*</span></label>
+          <input id="f-name" type="text" placeholder="Ex: Mercado Verde Vida" autocomplete="organization" required />
+        </div>
+        <div class="form-field">
+          <label for="f-address">Endereço <span aria-hidden="true">*</span></label>
+          <input id="f-address" type="text" placeholder="Rua, número – Bairro" required />
+        </div>
+        <div class="form-field">
+          <label for="f-city">Cidade <span aria-hidden="true">*</span></label>
+          <input id="f-city" type="text" placeholder="Ex: São Paulo" autocomplete="address-level2" required />
+        </div>
+        <div class="form-field">
+          <label for="f-type">Tipo <span aria-hidden="true">*</span></label>
+          <select id="f-type" required>
+            <option value="">Selecione...</option>
+            <option value="ecoponto">Ecoponto</option>
+            <option value="supermercado">Supermercado</option>
+            <option value="ong">ONG</option>
+            <option value="escola">Escola</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="f-phone">Telefone (opcional)</label>
+          <input id="f-phone" type="tel" placeholder="(00) 0000-0000" autocomplete="tel" />
+        </div>
+        <button class="modal-submit" type="submit">Enviar sugestão</button>
+      </form>
+
+      <div class="modal-success" id="modal-success" hidden>
+        <div class="modal-success-icon">✅</div>
+        <p><strong>Obrigado!</strong> Sua sugestão foi recebida e será analisada pela equipe.</p>
+        <button class="modal-submit" id="modal-success-btn">Fechar</button>
+      </div>
+    </div>
   </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
