@@ -83,6 +83,16 @@ function _onCardClick() {
   const point = _allPoints.find(p => p.id === id);
   if (point) flyToPoint(point);
   highlightCard(id);
+
+  // No mobile, recolhe o bottom sheet para que o mapa e o popup fiquem visíveis
+  if (!window.matchMedia('(min-width: 721px)').matches) {
+    const panel = document.getElementById('points-panel');
+    if (panel) {
+      panel.style.height = '';
+      panel.classList.remove('is-open');
+      setTimeout(() => map?.invalidateSize(), 350);
+    }
+  }
 }
 
 function _buildCardHTML(point) {

@@ -40,7 +40,7 @@ document.getElementById('recenter-btn')?.addEventListener('click', recenterToUse
 
   const isMobile = () => !window.matchMedia('(min-width: 721px)').matches;
 
-  let startY = 0, startH = 0, dragging = false;
+  let startY = 0, startH = 0, dragging = false, _didDrag = false;
 
   const peekH = () => parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sheet-peek')) || 260;
   const fullH = () => panel.parentElement.clientHeight - (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 56) - 48;
@@ -55,6 +55,7 @@ document.getElementById('recenter-btn')?.addEventListener('click', recenterToUse
   handle.addEventListener('touchstart', e => {
     if (!isMobile()) return;
     dragging = true;
+    _didDrag = false;
     startY = e.touches[0].clientY;
     startH = panel.getBoundingClientRect().height;
     panel.style.transition = 'none';
@@ -62,6 +63,7 @@ document.getElementById('recenter-btn')?.addEventListener('click', recenterToUse
 
   window.addEventListener('touchmove', e => {
     if (!dragging || !isMobile()) return;
+    if (Math.abs(startY - e.touches[0].clientY) > 5) _didDrag = true;
     const newH = Math.min(Math.max(startH + (startY - e.touches[0].clientY), peekH()), fullH());
     panel.style.height = newH + 'px';
     _syncRecenterPos();
@@ -83,13 +85,15 @@ document.getElementById('recenter-btn')?.addEventListener('click', recenterToUse
   });
 
   handle.addEventListener('click', () => {
-    if (!isMobile()) return;
+    if (!isMobile() || _didDrag) return;
     panel.classList.toggle('is-open');
     setTimeout(() => { map?.invalidateSize(); _syncRecenterPos(); }, 350);
   });
 
-  document.getElementById('map')?.addEventListener('click', () => {
+  document.getElementById('map')?.addEventListener('click', e => {
     if (!isMobile()) return;
+    // Não fecha o painel quando o clique é dentro de um popup do Leaflet ou nos controles do mapa
+    if (e.target.closest('.leaflet-popup') || e.target.closest('.leaflet-control')) return;
     panel.classList.remove('is-open');
     setTimeout(() => { map?.invalidateSize(); _syncRecenterPos(); }, 350);
   });

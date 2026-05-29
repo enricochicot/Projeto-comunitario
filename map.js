@@ -110,7 +110,10 @@ function plotCollectionPoints(points) {
 function flyToPoint(point) {
   if (!map) return;
   map.flyTo([point.lat, point.lng], 16, { duration: 1 });
-  _pointMarkersMap[point.id]?.openPopup();
+  // Abre o popup apenas após a animação concluir, evitando que apareça fora de posição
+  map.once('moveend', () => {
+    _pointMarkersMap[point.id]?.openPopup();
+  });
 }
 
 function highlightCard(pointId) {
