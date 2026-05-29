@@ -932,3 +932,84 @@ a:focus:not(:focus-visible) { outline: none; }
   .form-field input,
   .form-field select { font-size: .85rem; }
 }
+
+/* --------------------------------------------------------
+   MOBILE  <= 720px  — refinamentos específicos
+   -------------------------------------------------------- */
+@media (max-width: 720px) {
+
+  /* 1. Recenter: fixo acima do sheet, nunca fica escondido */
+  .recenter-btn {
+    position: fixed;
+    bottom: calc(var(--sheet-peek) + 14px);
+    right: 14px;
+    z-index: 999;
+  }
+
+  /* 2. Header: limita largura da pílula em telas pequenas */
+  .header-location {
+    max-width: clamp(110px, 40vw, 200px);
+  }
+
+  /* 3. Chips: linha única com scroll horizontal
+        (evita 2ª linha que consome espaço do painel) */
+  .filter-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+    /* Degrade visual indicando que há mais chips */
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent 100%);
+    mask-image:         linear-gradient(to right, black calc(100% - 28px), transparent 100%);
+  }
+  .filter-chips::-webkit-scrollbar { display: none; }
+
+  /* 4. Painel: padding compacto */
+  .panel-header {
+    padding: 4px 14px 8px;
+  }
+  .panel-title-row { margin-bottom: 6px; }
+  .search-wrapper  { margin-bottom: 6px; }
+
+  /* 5. Cards: menos padding, botão mais discreto */
+  .point-card { padding: 11px 13px; }
+  .card-actions { margin-top: 8px; }
+
+  .btn-directions {
+    padding: 7px 12px;
+    font-size: .75rem;
+    min-height: 36px;
+  }
+
+  /* 6. Footer: compacto, esconde cidade (já aparece no header) */
+  .panel-footer {
+    padding: 7px 14px;
+  }
+  .footer-partner {
+    padding: 5px 10px;
+    margin-bottom: 4px;
+    gap: 3px;
+  }
+  .footer-partner-city { display: none; }
+  .footer-links { font-size: .7rem; }
+
+  /* 7. iOS safe area — conteúdo não fica sob a home bar */
+  .panel-footer {
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+  body { padding-bottom: env(safe-area-inset-bottom, 0); }
+
+  /* 8. Popup do mapa: cabe em tela estreita */
+  .leaflet-popup-content-wrapper {
+    max-width: min(280px, 88vw) !important;
+  }
+}
+
+/* Telas muito pequenas (< 360px) */
+@media (max-width: 359px) {
+  .brand-partner  { display: none; }
+  .brand-name     { font-size: .95rem; }
+  .header-location { max-width: 130px; }
+  .accuracy-badge { display: none; }
+}

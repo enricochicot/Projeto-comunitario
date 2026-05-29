@@ -33,8 +33,9 @@ document.getElementById('recenter-btn')?.addEventListener('click', recenterToUse
 
 // 4. Bottom sheet (mobile)
 (function initBottomSheet() {
-  const panel  = document.getElementById('points-panel');
-  const handle = document.getElementById('panel-handle');
+  const panel     = document.getElementById('points-panel');
+  const handle    = document.getElementById('panel-handle');
+  const recenterBtn = document.getElementById('recenter-btn');
   if (!panel || !handle) return;
 
   const isMobile = () => !window.matchMedia('(min-width: 721px)').matches;
@@ -43,6 +44,13 @@ document.getElementById('recenter-btn')?.addEventListener('click', recenterToUse
 
   const peekH = () => parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sheet-peek')) || 260;
   const fullH = () => panel.parentElement.clientHeight - (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 56) - 48;
+
+  // Move o botão recentralizar para ficar sempre acima do sheet
+  function _syncRecenterPos() {
+    if (!recenterBtn || !isMobile()) return;
+    const sheetH = panel.getBoundingClientRect().height;
+    recenterBtn.style.bottom = (sheetH + 14) + 'px';
+  }
 
   handle.addEventListener('touchstart', e => {
     if (!isMobile()) return;
@@ -56,6 +64,7 @@ document.getElementById('recenter-btn')?.addEventListener('click', recenterToUse
     if (!dragging || !isMobile()) return;
     const newH = Math.min(Math.max(startH + (startY - e.touches[0].clientY), peekH()), fullH());
     panel.style.height = newH + 'px';
+    _syncRecenterPos();
   }, { passive: true });
 
   window.addEventListener('touchend', () => {
@@ -70,18 +79,23 @@ document.getElementById('recenter-btn')?.addEventListener('click', recenterToUse
       panel.style.height = '';
       panel.classList.remove('is-open');
     }
-    setTimeout(() => map?.invalidateSize(), 350);
+    setTimeout(() => { map?.invalidateSize(); _syncRecenterPos(); }, 350);
   });
 
   handle.addEventListener('click', () => {
     if (!isMobile()) return;
     panel.classList.toggle('is-open');
-    setTimeout(() => map?.invalidateSize(), 350);
+    setTimeout(() => { map?.invalidateSize(); _syncRecenterPos(); }, 350);
   });
 
   document.getElementById('map')?.addEventListener('click', () => {
-    if (isMobile()) panel.classList.remove('is-open');
+    if (!isMobile()) return;
+    panel.classList.remove('is-open');
+    setTimeout(() => { map?.invalidateSize(); _syncRecenterPos(); }, 350);
   });
+
+  // Posição inicial
+  setTimeout(_syncRecenterPos, 100);
 })();
 
 // 5. Modal: Sugerir novo ponto
